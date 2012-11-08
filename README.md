@@ -19,6 +19,7 @@ Guideline features:
 
 Other:
 - Multiple levels, increasing gravity
+- JavaFX lighting effects!
 - Basic split-screen multiplayer
 - Gameplay locked at 60 FPS
 
