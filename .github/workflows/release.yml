@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   tag:
-    name: Pick version
+    name: Prepare the release tag and notes
     if: >-
       ${{ github.event.workflow_run.conclusion == 'success' &&
           github.event.workflow_run.event == 'push' &&
@@ -25,7 +25,7 @@ jobs:
     outputs:
       version: ${{ steps.release.outputs.version }}
     steps:
-      - name: Check out master with release tags
+      - name: Check out the default branch with release tags
         uses: actions/checkout@v6
         with:
           ref: master
@@ -36,13 +36,13 @@ jobs:
           python-version: '3.12'
       - name: Install git-cliff for release notes
         run: python3 -m pip install git-cliff==2.14.2
-      - name: Prepare the release tag and notes
+      - name: Prepare the release from the latest checked commit
         id: release
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: python3 scripts/release.py
-      - name: Save notes for the publish job
+      - name: Upload release notes for publishing
         uses: actions/upload-artifact@v6
         if: steps.release.outputs.version != ''
         with:
@@ -52,7 +52,7 @@ jobs:
           overwrite: true
 
   build:
-    name: Build ${{ needs.tag.outputs.version }}
+    name: Build apps for release
     needs: tag
     if: needs.tag.outputs.version != ''
     uses: ./.github/workflows/build.yml
@@ -60,11 +60,11 @@ jobs:
       ref: ${{ needs.tag.outputs.version }}
 
   publish:
-    name: Publish ${{ needs.tag.outputs.version }}
+    name: Publish the release and app downloads
     needs: [tag, build]
     runs-on: ubuntu-24.04
     steps:
-      - name: Download app ZIPs
+      - name: Download app ZIPs for the release
         uses: actions/download-artifact@v7
         with:
           pattern: jfxtris-*
@@ -74,7 +74,7 @@ jobs:
         uses: actions/download-artifact@v7
         with:
           name: release-notes
-      - name: Publish release with versioned ZIPs
+      - name: Publish the release with versioned app ZIPs
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
