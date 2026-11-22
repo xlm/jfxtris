@@ -41,8 +41,21 @@ Other:
 
 ## Build
 
-JavaFX2 (required)
-JUnit4 (optional)
+Install JDK 25 and set `JAVA_HOME` to point to it. The Maven wrapper downloads
+Maven, JavaFX 27, and the test dependencies.
+
+On macOS and Linux, install `unzip` before the first run so the wrapper can
+unpack the checksum-verified Maven ZIP.
+
+```sh
+./mvnw test        # Compile and run the JUnit tests
+./mvnw javafx:run  # Launch JFXTRIS on a desktop
+```
+
+On Windows, use `mvnw.cmd` in place of `./mvnw`.
+
+The original JavaFX 2 university project is preserved at the
+[`university-original`](https://github.com/xlm/jfxtris/tree/university-original) tag.
 
 ## License
 
