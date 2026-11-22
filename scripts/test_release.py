@@ -15,10 +15,22 @@ class VersionTests(unittest.TestCase):
     def test_versions_require_three_plain_numbers(self):
         for version in ('0.0.0', '1.0.0', '12.34.56'):
             self.assertEqual(release.validate_version(version), version)
-        for version in ('', 'v1.0.0', '01.0.0', '1.0', '1.0.0\n',
-                        '１.0.0', '-1.0.0', '1.0.0-beta', '1.0.0+build',
-                        '1. 0.0', '1.0.0 extra', '1x0x0'):
-            with self.subTest(version=version), self.assertRaises(ValueError):
+        invalid_versions = {
+            'empty version': '',
+            'version starts with v': 'v1.0.0',
+            'leading zero': '01.0.0',
+            'missing patch number': '1.0',
+            'trailing newline': '1.0.0\n',
+            'full-width digit': '１.0.0',
+            'negative major version': '-1.0.0',
+            'prerelease suffix': '1.0.0-beta',
+            'build metadata': '1.0.0+build',
+            'space within version': '1. 0.0',
+            'extra text after version': '1.0.0 extra',
+            'letters instead of dots': '1x0x0',
+        }
+        for case, version in invalid_versions.items():
+            with self.subTest(case=case, version=version), self.assertRaises(ValueError):
                 release.validate_version(version)
 
 
@@ -123,8 +135,13 @@ class ReleaseTests(unittest.TestCase):
                 self.assertFalse(any(cmd[:2] in (('git', 'push'), ('git', 'commit'), ('gh', 'api')) for cmd in self.commands))
 
     def test_failed_commands_do_not_send_a_version_to_the_build_job(self):
-        for failure in (('gh', 'api'), ('git-cliff',), ('git', 'push')):
-            with self.subTest(failure=failure):
+        cases = {
+            'build status lookup failed': ('gh', 'api'),
+            'release notes generation failed': ('git-cliff',),
+            'tag push failed': ('git', 'push'),
+        }
+        for case, failure in cases.items():
+            with self.subTest(case=case):
                 self.fail = failure
                 with self.assertRaises(subprocess.CalledProcessError):
                     release.main()
@@ -183,15 +200,20 @@ class CommandTests(unittest.TestCase):
             self.assertEqual(kwargs['env'][f'GIT_{role}_NAME'], release.BOT_NAME)
             self.assertEqual(kwargs['env'][f'GIT_{role}_EMAIL'], release.BOT_EMAIL)
 
-    def test_release_lookup_only_swallows_missing(self):
-        for message in ('release not found', 'HTTP 404', 'HTTP 403', 'network failure'):
-            with self.subTest(message=message), mock.patch.object(release, 'run', side_effect=
-                    subprocess.CalledProcessError(1, 'gh', stderr=message)):
-                if message in ('release not found', 'HTTP 404'):
-                    self.assertFalse(release.release_exists('1.0.0'))
-                else:
-                    with self.assertRaises(subprocess.CalledProcessError):
-                        release.release_exists('1.0.0')
+    def test_release_lookup_returns_false_when_release_is_missing(self):
+        for message in ('release not found', 'HTTP 404'):
+            error = subprocess.CalledProcessError(1, 'gh', stderr=message)
+            with self.subTest(message=message), mock.patch.object(
+                    release, 'run', side_effect=error):
+                self.assertFalse(release.release_exists('1.0.0'))
+
+    def test_release_lookup_raises_when_it_cannot_check_for_a_release(self):
+        for message in ('HTTP 403', 'network failure'):
+            error = subprocess.CalledProcessError(1, 'gh', stderr=message)
+            with self.subTest(message=message), mock.patch.object(
+                    release, 'run', side_effect=error):
+                with self.assertRaises(subprocess.CalledProcessError):
+                    release.release_exists('1.0.0')
 
 
 if __name__ == '__main__':
