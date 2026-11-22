@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   tag:
-    name: Prepare the release tag and notes
+    name: Tag the release and prepare its notes
     if: >-
       ${{ github.event.workflow_run.conclusion == 'success' &&
           github.event.workflow_run.event == 'push' &&
@@ -34,9 +34,9 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Install git-cliff for release notes
+      - name: Install git-cliff for versioning and release notes
         run: python3 -m pip install git-cliff==2.14.2
-      - name: Prepare the release from the latest checked commit
+      - name: Choose the release version and generate notes
         id: release
         env:
           GH_TOKEN: ${{ github.token }}
