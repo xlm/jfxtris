@@ -1,4 +1,5 @@
 name: Release
+run-name: ${{ github.event.workflow_run.display_title }}
 
 on:
   workflow_run:
@@ -12,6 +13,7 @@ permissions:
 
 jobs:
   tag:
+    name: Pick version
     if: >-
       ${{ github.event.workflow_run.conclusion == 'success' &&
           github.event.workflow_run.event == 'push' }}
@@ -49,6 +51,7 @@ jobs:
           overwrite: true
 
   build:
+    name: Build ${{ needs.tag.outputs.version }}
     needs: tag
     if: needs.tag.outputs.version != ''
     uses: ./.github/workflows/build.yml
@@ -56,6 +59,7 @@ jobs:
       ref: ${{ needs.tag.outputs.version }}
 
   publish:
+    name: Publish ${{ needs.tag.outputs.version }}
     needs: [tag, build]
     runs-on: ubuntu-24.04
     steps:
@@ -91,3 +95,4 @@ jobs:
             mv "$file" "dist/jfxtris-$VERSION-${file#dist/jfxtris-}"
           done
           gh release create "$VERSION" dist/*.zip --verify-tag --notes-file release-notes.md
+          printf 'Released [%s](%s)\n' "$VERSION" "https://github.com/$GH_REPO/releases/tag/$VERSION" >> "$GITHUB_STEP_SUMMARY"
