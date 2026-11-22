@@ -78,8 +78,11 @@ its own Java runtime.
 | Windows | `JFXTRIS/JFXTRIS.exe` |
 | macOS | `JFXTRIS.app` |
 
-Linux requires a graphical desktop with GTK 3. The macOS app is distributed
-without notarization, so macOS may require you to allow it in Privacy & Security.
+Linux requires a graphical desktop with GTK 3. The Linux arm64 app also needs
+glibc 2.38 or newer (for example, Ubuntu 24.04 or Debian 13).
+
+The macOS app is distributed without notarization, so macOS may require you
+to allow it in Privacy & Security.
 
 The [Standalone builds workflow](https://github.com/xlm/jfxtris/actions/workflows/standalone.yml)
 uploads ZIPs for Linux and macOS (x64 and arm64) and Windows (x64). OpenJFX
