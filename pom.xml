@@ -37,6 +37,7 @@
                 <version>3.14.1</version>
                 <configuration>
                     <includes>
+                        <include>module-info.java</include>
                         <include>application/**/*.java</include>
                         <include>data_types/**/*.java</include>
                         <include>game/**/*.java</include>
@@ -44,18 +45,31 @@
                         <include>ui/**/*.java</include>
                     </includes>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>default-testCompile</id>
+                        <configuration>
+                            <!-- Keep JUnit 4 tests on the classpath. -->
+                            <useModulePath>false</useModulePath>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.5.4</version>
+                <configuration>
+                    <useModulePath>false</useModulePath>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>0.0.8</version>
                 <configuration>
-                    <mainClass>application.Main</mainClass>
+                    <mainClass>io.github.xlm.jfxtris/application.Main</mainClass>
+                    <jlinkImageName>runtime</jlinkImageName>
                     <options>
                         <option>--enable-native-access=javafx.graphics</option>
                     </options>
