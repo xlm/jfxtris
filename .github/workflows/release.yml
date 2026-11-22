@@ -1,0 +1,93 @@
+name: Release
+
+on:
+  workflow_run:
+    workflows: [Standalone builds]
+    types: [completed]
+    branches: [master]
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  tag:
+    if: >-
+      ${{ github.event.workflow_run.conclusion == 'success' &&
+          github.event.workflow_run.event == 'push' }}
+    concurrency:
+      group: release
+      cancel-in-progress: false
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - name: Check out master with release tags
+        uses: actions/checkout@v6
+        with:
+          ref: master
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install git-cliff for release notes
+        run: python3 -m pip install git-cliff==2.14.2
+      - name: Prepare the release tag and notes
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: python3 scripts/release.py
+      - name: Save notes for the publish job
+        uses: actions/upload-artifact@v6
+        if: steps.release.outputs.version != ''
+        with:
+          name: release-notes
+          path: release-notes.md
+          if-no-files-found: error
+          overwrite: true
+
+  build:
+    needs: tag
+    if: needs.tag.outputs.version != ''
+    uses: ./.github/workflows/build.yml
+    with:
+      ref: ${{ needs.tag.outputs.version }}
+
+  publish:
+    needs: [tag, build]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Download app ZIPs
+        uses: actions/download-artifact@v7
+        with:
+          pattern: jfxtris-*
+          path: dist
+          merge-multiple: true
+      - name: Download release notes
+        uses: actions/download-artifact@v7
+        with:
+          name: release-notes
+      - name: Publish release with versioned ZIPs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          VERSION: ${{ needs.tag.outputs.version }}
+        run: |
+          # A failed asset upload can leave a draft. Keep its tag for this retry.
+          if draft=$(gh release view "$VERSION" --json isDraft --jq .isDraft 2>release-view.err); then
+            if [ "$draft" = true ]; then
+              gh release delete "$VERSION" --yes
+            fi
+          elif ! grep -Eq 'release not found|HTTP 404' release-view.err; then
+            # A missing release is expected, but other lookup errors must stop us.
+            cat release-view.err >&2
+            exit 1
+          fi
+
+          # Build artifacts keep stable names. Published downloads include the version.
+          for file in dist/jfxtris-*.zip; do
+            mv "$file" "dist/jfxtris-$VERSION-${file#dist/jfxtris-}"
+          done
+          gh release create "$VERSION" dist/*.zip --verify-tag --notes-file release-notes.md
