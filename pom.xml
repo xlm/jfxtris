@@ -9,7 +9,7 @@
     <version>${revision}${changelist}</version>
 
     <properties>
-        <revision>1.0.2</revision>
+        <revision>1.0.3</revision>
         <changelist>-SNAPSHOT</changelist>
         <maven.compiler.release>25</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
