@@ -54,6 +54,40 @@ unpack the checksum-verified Maven ZIP.
 
 On Windows, use `mvnw.cmd` in place of `./mvnw`.
 
+### Standalone app image
+
+Build on the OS you want to run the game on. With Temurin JDK 25 in
+`JAVA_HOME`, install Python 3 and, on Linux or macOS, make sure `zip` and
+`unzip` are available. From the repository root, run:
+
+```sh
+python3 scripts/build_app.py
+```
+
+On Windows, run `python scripts/build_app.py`. The script uses `javafx:jlink`
+and `jpackage` to create the app image in `target/app-image/` and its ZIP
+in `target/`. It forwards arguments such as `-s /path/to/settings.xml` to Maven.
+
+Extract the entire ZIP, then open the launcher for your OS. The app includes
+its own Java runtime.
+
+| OS | Launcher |
+| --- | --- |
+| Linux | `JFXTRIS/bin/JFXTRIS` |
+| Windows | `JFXTRIS/JFXTRIS.exe` |
+| macOS | `JFXTRIS.app` |
+
+Linux requires a graphical desktop with GTK 3. The macOS app is distributed
+without notarization, so macOS may require you to allow it in Privacy & Security.
+
+The [Standalone builds workflow](https://github.com/xlm/jfxtris/actions/workflows/standalone.yml)
+uploads ZIPs for Linux and macOS (x64 and arm64) and Windows (x64). OpenJFX
+27.0.1.1 does not publish native Windows arm64 artifacts. Builds from `v*`
+tags also attach the ZIPs to the corresponding
+[GitHub Release](https://github.com/xlm/jfxtris/releases).
+
+## Original project
+
 The original JavaFX 2 university project is preserved at the
 [`university-original`](https://github.com/xlm/jfxtris/tree/university-original) tag.
 
