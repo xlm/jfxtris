@@ -1,0 +1,58 @@
+name: Build app images
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        required: true
+        type: string
+
+env:
+  MAVEN_ARGS: -Dchangelist=
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux-x64
+            runner: ubuntu-24.04
+          - platform: linux-arm64
+            runner: ubuntu-24.04-arm
+          - platform: windows-x64
+            runner: windows-2025
+          - platform: macos-x64
+            runner: macos-15-intel
+          - platform: macos-arm64
+            runner: macos-15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - name: Test (Linux and macOS)
+        if: runner.os != 'Windows'
+        run: ./mvnw -B test
+      - name: Test (Windows)
+        if: runner.os == 'Windows'
+        run: .\mvnw.cmd -B test
+      - name: Build app image
+        run: python scripts/build_app.py
+      - uses: actions/upload-artifact@v6
+        with:
+          name: jfxtris-${{ matrix.platform }}
+          path: target/jfxtris-${{ matrix.platform }}.zip
+          if-no-files-found: error
+          compression-level: 0
+          overwrite: true

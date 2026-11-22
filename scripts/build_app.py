@@ -7,11 +7,13 @@ import subprocess
 import sys
 from pathlib import Path
 from zipfile import ZipFile
+import xml.etree.ElementTree as ET
 
 
 def main():
     argparse.ArgumentParser(description=__doc__).parse_args()
     root = Path(__file__).resolve().parents[1]
+    revision = ET.parse(root / "pom.xml").findtext("{*}properties/{*}revision")
     platform_name, image_name, launcher = {
         "linux": ("linux", "JFXTRIS", "bin/JFXTRIS"),
         "win32": ("windows", "JFXTRIS", "JFXTRIS.exe"),
@@ -43,6 +45,7 @@ def main():
         shutil.rmtree(image)
     subprocess.run([
         jpackage, "--type", "app-image", "--name", "JFXTRIS",
+        "--app-version", revision,
         "--dest", image_dir, "--runtime-image", runtime,
         "--module", "io.github.xlm.jfxtris/application.Main",
         "--java-options", "--enable-native-access=javafx.graphics",
