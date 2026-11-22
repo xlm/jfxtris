@@ -66,7 +66,8 @@ python3 scripts/build_app.py
 
 On Windows, run `python scripts/build_app.py`. The script uses `javafx:jlink`
 and `jpackage` to create the app image in `target/app-image/` and its ZIP
-in `target/`. It forwards arguments such as `-s /path/to/settings.xml` to Maven.
+in `target/`. If you need a Maven mirror, configure it in your user
+`~/.m2/settings.xml`.
 
 Extract the entire ZIP, then open the launcher for your OS. The app includes
 its own Java runtime.

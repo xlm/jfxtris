@@ -1,5 +1,6 @@
 """Build and zip the standalone app image for the current platform."""
 
+import argparse
 import os
 import shutil
 import subprocess
@@ -9,6 +10,7 @@ from zipfile import ZipFile
 
 
 def main():
+    argparse.ArgumentParser(description=__doc__).parse_args()
     root = Path(__file__).resolve().parents[1]
     platform_name, image_name, launcher = {
         "linux": ("linux", "JFXTRIS", "bin/JFXTRIS"),
@@ -30,8 +32,8 @@ def main():
     jdk_arch = release["OS_ARCH"].strip('"')
     arch = {"amd64": "x64", "x86_64": "x64", "aarch64": "arm64", "arm64": "arm64"}[jdk_arch]
 
-    wrapper = root / ("mvnw.cmd" if windows else "mvnw")
-    subprocess.run([wrapper, "-B", *sys.argv[1:], "javafx:jlink"], cwd=root, check=True)
+    wrapper = ["cmd.exe", "/d", "/c", r".\mvnw.cmd"] if windows else ["./mvnw"]
+    subprocess.run([*wrapper, "-B", "javafx:jlink"], cwd=root, check=True)
 
     target = root / "target"
     runtime = target / "runtime"
